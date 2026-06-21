@@ -147,12 +147,13 @@
   }
 
   /* ===================================================================
-     LEDGER 3D MODEL — rotate + zoom, pan still blocked
-     model-viewer's built-in camera-controls is now enabled (needed for
-     pinch/scroll zoom), with min/max-camera-orbit radius limits set in
-     the HTML so zoom can't go absurdly far in or out. Two-finger/
-     right-click PAN is the one gesture we still actively suppress,
-     since nothing in the brief asked for panning around the device.
+     LEDGER 3D MODEL — rotate, zoom, AND pan
+     model-viewer's built-in camera-controls handles all three natively:
+     left-click/single-finger drag rotates, scroll/pinch zooms, and
+     right-click-drag or two-finger-drag pans the camera target. We just
+     get out of its way here — only blocking the browser's native
+     right-click context menu, since that would otherwise pop up over
+     the model and interrupt the pan gesture.
      =================================================================== */
   function initLedgerModel() {
     const viewport = document.getElementById("vaultViewport");
@@ -167,37 +168,11 @@
       { once: true }
     );
 
-    // model-viewer maps two-finger drag / right-click-drag to panning
-    // the camera target. We intercept at the pointer level: a second
-    // simultaneous pointer, or any pointer with button === 2 (right
-    // click), gets its events stopped before model-viewer's internal
-    // controls see them, so only single-finger / left-click drag
-    // (rotate) and wheel/pinch (zoom, handled natively) get through.
-    let activePointers = 0;
-
-    viewport.addEventListener(
-      "pointerdown",
-      (e) => {
-        activePointers++;
-        if (e.button === 2 || activePointers > 1) {
-          e.stopPropagation();
-          e.preventDefault();
-        }
-      },
-      true
-    );
-
-    viewport.addEventListener(
-      "pointerup",
-      () => {
-        activePointers = Math.max(0, activePointers - 1);
-      },
-      true
-    );
-
     viewport.addEventListener("contextmenu", (e) => e.preventDefault());
 
-    viewport.style.touchAction = "pinch-zoom"; // allow pinch (zoom), block two-finger pan/scroll drag
+    // Let model-viewer's own gesture handling own all pointer/touch
+    // events inside the viewport (rotate / pan / pinch-zoom).
+    viewport.style.touchAction = "none";
   }
 
   /* ===================================================================
@@ -230,7 +205,11 @@
     // Single generic glyph reused for every badge (a small star), tinted
     // per-badge via fill color — keeps this file from needing 12 bespoke
     // icon paths for every possible Discord flag.
-    return '<svg viewBox="0 0 24 24"><path d="M12 2.5l2.6 6.3 6.8.5-5.2 4.4 1.7 6.6L12 16.7l-5.9 3.6 1.7-6.6-5.2-4.4 6.8-.5L12 2.5Z"/></svg>';
+    // width/height are set explicitly (not just viewBox) — an SVG with
+    // only a viewBox has no intrinsic size, and CSS sizing on injected
+    // innerHTML markup isn't reliably guaranteed to win, which is what
+    // caused the badge to render at native/huge size instead of 11px.
+    return '<svg width="11" height="11" viewBox="0 0 24 24"><path d="M12 2.5l2.6 6.3 6.8.5-5.2 4.4 1.7 6.6L12 16.7l-5.9 3.6 1.7-6.6-5.2-4.4 6.8-.5L12 2.5Z"/></svg>';
   }
 
   function initDiscordPresence() {
@@ -332,6 +311,11 @@
         )
         .join("");
       container.querySelectorAll(".badge svg").forEach((svg) => {
+        svg.setAttribute("width", "11");
+        svg.setAttribute("height", "11");
+        svg.style.width = "11px";
+        svg.style.height = "11px";
+        svg.style.display = "block";
         svg.style.fill = "currentColor";
       });
     }
