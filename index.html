@@ -3,38 +3,49 @@
 
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>lithiumera</title>
+<meta name="viewport" content="width=device-width">
 
 <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<video id="bg" autoplay muted loop playsinline>
+<video autoplay muted loop id="video">
 <source src="background.mp4">
 </video>
 
-<div class="overlay"></div>
+<div class="cursor"></div>
 
 <audio id="music" loop>
 <source src="song.mp3">
 </audio>
 
+<div class="noise"></div>
+
 <div class="card">
 
-<div class="pfp"></div>
+<div class="avatar"></div>
 
-<h1>@lithiumera</h1>
+<h1 class="title">@lithiumera</h1>
 
-<p>click to enter</p>
+<p class="subtitle">
+click enter
+</p>
 
-<button id="play">
-▶ enter
+<button id="enter">
+ENTER
 </button>
 
-<div class="bar">
-<div id="progress"></div>
+<div class="visualizer">
+<div></div>
+<div></div>
+<div></div>
+<div></div>
+<div></div>
+</div>
+
+<div class="songbar">
+<div id="fill"></div>
 </div>
 
 </div>
