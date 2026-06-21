@@ -5,9 +5,9 @@
      EDIT THESE — your wallet addresses
      =================================================================== */
   const ADDRESSES = {
-    btc: "YOUR_BTC_ADDRESS_HERE",
-    eth: "YOUR_ETH_ADDRESS_HERE",
-    ltc: "YOUR_LTC_ADDRESS_HERE",
+    btc: "YZZZ",
+    eth: "ZZZ",
+    ltc: "ZZZZ",
   };
 
   document.addEventListener("DOMContentLoaded", init);
