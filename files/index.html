@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>LARP</title>
+<meta name="description" content="LARP" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/style.css" />
+
+<!-- model-viewer: handles GLB loading/rendering. Built-in camera-controls IS used here
+     (unlike the previous version) because the model is now zoomable — but pan stays
+     blocked in js/main.js so the only gestures are rotate + zoom. -->
+<script type="module" src="https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+</head>
+<body>
+
+<!-- ============================== -->
+<!-- BACKGROUND LAYER -->
+<!-- ============================== -->
+<div class="bg-layer" aria-hidden="true">
+  <video
+    id="bgVideo"
+    class="bg-video"
+    src="assets/background.mp4"
+    muted
+    loop
+    playsinline
+    preload="auto"
+  ></video>
+  <div class="bg-noise"></div>
+  <div class="bg-vignette"></div>
+</div>
+
+<!-- Audio engine: real <audio> element + Web Audio API EQ chain, see js/main.js.
+     src is set at runtime once js/main.js discovers your mp3 files. -->
+<audio id="songAudio" loop preload="auto" crossorigin="anonymous"></audio>
+
+<!-- ============================== -->
+<!-- ENTRY GATE -->
+<!-- ============================== -->
+<div class="gate" id="gate">
+  <div class="gate__pulse" aria-hidden="true"></div>
+  <button class="enter-btn" id="sealBtn" type="button" aria-label="Click to enter site and start audio">
+    <span class="enter-btn__ring" aria-hidden="true"></span>
+    <span class="enter-btn__label">click to enter</span>
+  </button>
+  <p class="gate__hint">sound on</p>
+</div>
+
+<!-- ============================== -->
+<!-- MAIN CARD -->
+<!-- ============================== -->
+<main class="page">
+  <section class="card" id="ledgerCard">
+
+    <!-- ============================== -->
+    <!-- AUDIO MENU: track switcher + volume + EQ, compact dropdown -->
+    <!-- ============================== -->
+    <div class="audio-menu" id="audioMenu">
+      <button class="audio-menu__trigger" id="audioMenuTrigger" type="button" aria-expanded="false" aria-controls="audioPanel" aria-label="Open audio controls">
+        <svg class="audio-menu__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 18V5l12-2v13" />
+          <circle cx="6" cy="18" r="3" />
+          <circle cx="18" cy="16" r="3" />
+        </svg>
+      </button>
+
+      <div class="audio-panel" id="audioPanel" hidden>
+
+        <div class="audio-panel__row audio-panel__row--track">
+          <button class="audio-panel__skip" id="trackPrev" type="button" aria-label="Previous track">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 20 9 12l10-8v16Z"/><path d="M7 4v16" /></svg>
+          </button>
+          <div class="audio-panel__track-info">
+            <p class="audio-panel__track-name" id="trackName">no tracks found</p>
+            <p class="audio-panel__track-sub">auto-switch &middot; <span id="trackIndex">0/0</span></p>
+          </div>
+          <button class="audio-panel__skip" id="trackNext" type="button" aria-label="Next track">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4l10 8-10 8V4Z"/><path d="M17 4v16" /></svg>
+          </button>
+        </div>
+
+        <div class="audio-panel__row">
+          <svg class="audio-panel__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 9v6h4l5 5V4L8 9H4Z" /><path d="M16.5 8.5a5 5 0 0 1 0 7" />
+          </svg>
+          <input class="audio-panel__slider" id="volumeSlider" type="range" min="0" max="100" value="85" aria-label="Volume" />
+          <span class="audio-panel__value" id="volumeValue">85</span>
+        </div>
+
+        <div class="audio-panel__row">
+          <svg class="audio-panel__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v18M6 7v10M18 7v10" />
+          </svg>
+          <input class="audio-panel__slider" id="bassSlider" type="range" min="-12" max="12" value="0" aria-label="Bass boost" />
+          <span class="audio-panel__value" id="bassValue">0</span>
+        </div>
+
+        <p class="audio-panel__label">bass</p>
+      </div>
+    </div>
+
+    <!-- ---- profile ---- -->
+    <header class="profile">
+      <div class="avatar-wrap">
+        <img class="avatar" id="discordAvatar" src="" alt="" hidden />
+        <div class="avatar avatar--placeholder" id="discordAvatarPlaceholder"></div>
+        <span class="status-dot" id="discordStatusDot" data-status="offline" title="offline"></span>
+      </div>
+
+      <div class="name-row">
+        <h1 class="display-name">Your Name Here</h1>
+        <div class="badges" id="discordBadges" aria-label="Discord badges"></div>
+      </div>
+
+      <p class="tagline">LARP</p>
+      <p class="discord-status-text" id="discordStatusText">connecting&hellip;</p>
+    </header>
+
+    <!-- ============================== -->
+    <!-- CRYPTO ROWS -->
+    <!-- ============================== -->
+    <ul class="entries" id="entries">
+
+      <li class="entry" data-coin="btc" data-cg-id="bitcoin" data-address="YOUR_BTC_ADDRESS_HERE">
+        <span class="entry__icon" aria-hidden="true">
+          <svg viewBox="0 0 32 32"><path d="M22.5 14.4c.3-2.2-1.3-3.4-3.6-4.2l.7-3-1.8-.4-.7 2.9c-.5-.1-1-.2-1.4-.3l.7-2.9-1.8-.4-.7 3c-.4-.1-.8-.2-1.1-.3v0l-2.5-.6-.5 2s1.3.3 1.3.3c.7.2.9.7.8 1l-.9 3.7v0l-1.2 5c-.1.2-.3.6-.8.4 0 0-1.3-.3-1.3-.3l-.9 2.1 2.4.6c.4.1.9.2 1.3.3l-.7 3 1.8.4.7-3c.5.1 1 .2 1.4.4l-.7 3 1.8.4.7-3c3.1.6 5.4.4 6.4-2.4.8-2.3-.04-3.6-1.7-4.5 1.2-.3 2.1-1.1 2.3-2.7Zm-4.1 5.8c-.6 2.3-4.4 1-5.6.7l1-4c1.2.3 5.2.9 4.6 3.3Zm.6-5.8c-.5 2-3.7 1-4.7.8l.9-3.6c1 .3 4.3.7 3.8 2.8Z"/></svg>
+        </span>
+        <span class="entry__chart" aria-hidden="true">
+          <canvas class="entry__sparkline" data-coin="btc" width="86" height="28"></canvas>
+        </span>
+        <span class="entry__pct" id="pct-btc">&middot;&middot;&middot;</span>
+        <button class="copy-btn" type="button" aria-label="Copy Bitcoin address">
+          <svg class="copy-btn__icon copy-btn__icon--copy" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+          </svg>
+          <svg class="copy-btn__icon copy-btn__icon--done" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 6 9 17l-5-5"/>
+          </svg>
+        </button>
+        <span class="entry__tooltip" role="status" aria-live="polite">Copy Address</span>
+      </li>
+
+      <li class="entry" data-coin="eth" data-cg-id="ethereum" data-address="YOUR_ETH_ADDRESS_HERE">
+        <span class="entry__icon" aria-hidden="true">
+          <svg viewBox="0 0 32 32"><path d="M16 3 7.5 16.8 16 21.5l8.5-4.7L16 3Z"/><path d="M7.5 18.5 16 29l8.5-10.5L16 23.2 7.5 18.5Z"/></svg>
+        </span>
+        <span class="entry__chart" aria-hidden="true">
+          <canvas class="entry__sparkline" data-coin="eth" width="86" height="28"></canvas>
+        </span>
+        <span class="entry__pct" id="pct-eth">&middot;&middot;&middot;</span>
+        <button class="copy-btn" type="button" aria-label="Copy Ethereum address">
+          <svg class="copy-btn__icon copy-btn__icon--copy" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+          </svg>
+          <svg class="copy-btn__icon copy-btn__icon--done" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 6 9 17l-5-5"/>
+          </svg>
+        </button>
+        <span class="entry__tooltip" role="status" aria-live="polite">Copy Address</span>
+      </li>
+
+      <li class="entry" data-coin="ltc" data-cg-id="litecoin" data-address="YOUR_LTC_ADDRESS_HERE">
+        <span class="entry__icon" aria-hidden="true">
+          <svg viewBox="0 0 32 32"><path d="M12.7 5.3 9.3 17.6l-2.6.9-.7 2.4 2.6-.9-1.3 4.9h12.9l.9-3.4H12.7l1.3-4.8 2.6-.9.7-2.4-2.6.9 2.5-9Z"/></svg>
+        </span>
+        <span class="entry__chart" aria-hidden="true">
+          <canvas class="entry__sparkline" data-coin="ltc" width="86" height="28"></canvas>
+        </span>
+        <span class="entry__pct" id="pct-ltc">&middot;&middot;&middot;</span>
+        <button class="copy-btn" type="button" aria-label="Copy Litecoin address">
+          <svg class="copy-btn__icon copy-btn__icon--copy" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+          </svg>
+          <svg class="copy-btn__icon copy-btn__icon--done" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 6 9 17l-5-5"/>
+          </svg>
+        </button>
+        <span class="entry__tooltip" role="status" aria-live="polite">Copy Address</span>
+      </li>
+
+    </ul>
+
+    <!-- ============================== -->
+    <!-- LEDGER 3D VIEWER (rotate + zoom) -->
+    <!-- ============================== -->
+    <section class="vault" aria-label="3D Ledger hardware wallet viewer">
+      <div class="vault__case" id="vaultCase">
+        <div class="vault__viewport" id="vaultViewport">
+          <model-viewer
+            id="ledgerModel"
+            class="ledger-model"
+            src="assets/ledger.glb"
+            alt="A rotating, zoomable 3D model of a Ledger hardware wallet"
+            shadow-intensity="0"
+            exposure="1.1"
+            tone-mapping="neutral"
+            interaction-prompt="none"
+            camera-controls
+            min-camera-orbit="auto auto 40%"
+            max-camera-orbit="auto auto 200%"
+            camera-orbit="0deg 75deg 105%"
+            field-of-view="30deg"
+            loading="eager"
+            reveal="auto"
+          ></model-viewer>
+
+          <div class="vault__loader" id="vaultLoader">
+            <span class="vault__loader-bar"></span>
+          </div>
+        </div>
+
+        <p class="vault__hint">
+          <svg class="vault__hint-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 3-6.7" />
+            <path d="M3 4v5h5" />
+          </svg>
+          drag to rotate &middot; scroll to zoom
+        </p>
+      </div>
+    </section>
+
+    <footer class="card__footer">
+      <p>made with <span class="footer-heart">&hearts;</span> &middot; <span id="year"></span></p>
+    </footer>
+
+  </section>
+</main>
+
+<script src="js/main.js" defer></script>
+</body>
+</html>
